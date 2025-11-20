@@ -8,7 +8,7 @@ library(dplyr)
 library(tmap)
 ```
 
-Question #1: How many peaks currently listed as Munros have always been included on the list?
+# Question #1: How many peaks currently listed as Munros have always been included on the list?
 
 ```{R munro-analysis, echo=TRUE, message=FALSE, warning=FALSE}
 scottish_munros <- munrodata$scottish_munros
@@ -31,7 +31,7 @@ tm_shape(scotland) +
     tm_layout(legend.outside = TRUE)
 ```
 
-Question 2: Which year saw the largest number of changes to the classification?
+# Question 2: Which year saw the largest number of changes to the classification?
 
 ```{R reclassification-analysis, echo=TRUE, message=FALSE, warning=FALSE}
 # which years saw the most reclassifications from one type to another?
