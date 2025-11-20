@@ -1,1 +1,52 @@
-tbd
+```{R setup, include=FALSE}
+munrodata <- tidytuesdayR::tt_load('2025-08-19')
+metdata <- tidytuesdayR::tt_load('2025-10-21')
+library(rnaturalearth)
+library(sf)
+library(tidyverse)
+library(dplyr)
+library(tmap)
+```
+
+Question #1: How many peaks currently listed as Munros have always been included on the list?
+
+```{R munro-analysis, echo=TRUE, message=FALSE, warning=FALSE}
+scottish_munros <- munrodata$scottish_munros
+munro_classification <- scottish_munros %>%
+    select(Name, xcoord, ycoord, "1891", "1921", "1933", "1953", "1969", "1974", "1981", "1997", "2021") %>%
+    pivot_longer(cols = c("1891", "1921", "1933", "1953", "1969", "1974", "1981", "1997", "2021"), names_to = "Year", values_to = "Classification") %>%
+    group_by(Name)
+munro_always <- munro_classification %>%
+    summarize(Always_Munro = all(Classification == "Munro"), xcoord = first(xcoord), ycoord = first(ycoord))
+munro_always_sf <- drop_na(munro_always) %>%
+st_as_sf(coords = c("xcoord", "ycoord"), crs = 27700, remove = FALSE)
+scotland <- ne_states(geounit = "Scotland", returnclass = "sf") %>%
+    st_transform(crs = 27700)
+
+tm_shape(scotland) +
+    tm_polygons(col = "lightgrey") +
+    tm_shape(munro_always_sf) +
+    tm_dots(col = "Always_Munro", palette = c("red", "blue"), size = 0.1) +
+    tm_title("Which Monros have always been classified as such?") +
+    tm_layout(legend.outside = TRUE)
+```
+
+Question 2: Which year saw the largest number of changes to the classification?
+
+```{R reclassification-analysis, echo=TRUE, message=FALSE, warning=FALSE}
+# which years saw the most reclassifications from one type to another?
+reclassifications <- munro_classification %>%
+    arrange(Name, Year) %>%
+    group_by(Name) %>%
+    mutate(Previous_Classification = lag(Classification)) %>%
+    filter(!is.na(Previous_Classification) & Classification != Previous_Classification) %>%
+    ungroup() %>%
+    group_by(Year) %>%
+    summarize(Reclassifications = n())
+ggplot(reclassifications, aes(x = Year, y = Reclassifications)) +
+    geom_bar(stat = "identity", fill = "steelblue") +
+    labs(title = "Number of Munro Reclassifications by Year",
+         x = "Year",
+         y = "Number of Reclassifications") +
+    theme_minimal()
+```
