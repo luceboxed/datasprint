@@ -6,6 +6,7 @@ library(sf)
 library(tidyverse)
 library(dplyr)
 library(tmap)
+library(knitr)
 ```
 
 # Question #1: How many peaks currently listed as Munros have always been included on the list?
@@ -18,8 +19,8 @@ munro_classification <- scottish_munros %>%
     group_by(Name)
 munro_always <- munro_classification %>%
     summarize(Always_Munro = all(Classification == "Munro"), xcoord = first(xcoord), ycoord = first(ycoord))
-munro_always_sf <- drop_na(munro_always) %>%
-st_as_sf(coords = c("xcoord", "ycoord"), crs = 27700, remove = FALSE)
+    kable(munro_always)
+munro_always_sf <- drop_na(munro_always) %>% st_as_sf(coords = c("xcoord", "ycoord"), crs = 27700, remove = FALSE)
 scotland <- ne_states(geounit = "Scotland", returnclass = "sf") %>%
     st_transform(crs = 27700)
 
