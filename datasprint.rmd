@@ -19,7 +19,7 @@ munro_classification <- scottish_munros %>%
     group_by(Name)
 munro_always <- munro_classification %>%
     summarize(Always_Munro = all(Classification == "Munro"), xcoord = first(xcoord), ycoord = first(ycoord))
-    kable(munro_always)
+    kable(head(munro_always))
 munro_always_sf <- drop_na(munro_always) %>% st_as_sf(coords = c("xcoord", "ycoord"), crs = 27700, remove = FALSE)
 scotland <- ne_states(geounit = "Scotland", returnclass = "sf") %>%
     st_transform(crs = 27700)
@@ -50,4 +50,140 @@ ggplot(reclassifications, aes(x = Year, y = Reclassifications)) +
          x = "Year",
          y = "Number of Reclassifications") +
     theme_minimal()
+```
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+#install.packages("tidytuesdayR")
+#install.packages("devtools")
+library(tidytuesdayR)
+library(rnaturalearth)
+library(sf)
+library(tidyverse)
+library(dplyr)
+library(tmap)
+library(rnaturalearth)
+library(knitr)
+```
+
+
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+tuesdata <- tidytuesdayR::tt_load('2025-08-19')
+scottish_munros <- tuesdata$scottish_munros
+
+munro_map <- scottish_munros %>%
+  filter(!is.na(xcoord) & !is.na(ycoord)) %>%
+  st_as_sf(coords=c("xcoord","ycoord"), crs = 27700) %>%
+  st_transform(4326)
+
+projection <- scottish_munros %>%
+  filter(!is.na(xcoord) & !is.na(ycoord)) %>%
+  st_as_sf(coords=c("xcoord","ycoord"), crs = 27700) %>%
+  st_transform(4326) %>%
+  st_coordinates()
+
+munro_map_XY <- munro_map %>%
+  cbind(projection)
+```
+
+# Question #4: Which are the rainiest/coldest/sunniest/hottest months to visit the highest peak? Has that changed over time
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+highest_peak <- scottish_munros %>%
+  filter(Height_ft == max(Height_ft, na.rm = TRUE))
+
+tuesdata <- tidytuesdayR::tt_load('2025-10-21')
+
+historic_station_met <- tuesdata$historic_station_met
+station_meta <- tuesdata$station_meta
+ 
+highest_coords <- highest_peak %>%
+  st_as_sf(coords = c("xcoord", "ycoord"), crs = 27700) %>%
+  st_transform(4326)
+
+stations_sf <- station_meta %>%
+  filter(!is.na(lng) & !is.na(lat)) %>%
+  st_as_sf(coords = c("lng", "lat"), crs = 4326)
+
+nearest_station <- stations_sf[which.min(st_distance(highest_coords, stations_sf)), ]
+
+station_id <- nearest_station$station
+
+weather_highest <- historic_station_met %>%
+  filter(station == "dunstaffnage")
+
+monthly_climate <- weather_highest %>%
+  group_by(month) %>%
+  summarise(
+    avg_tmin = mean(tmin, na.rm = TRUE),
+    avg_tmax = mean(tmax, na.rm = TRUE),
+    total_af = sum(af, na.rm = TRUE),
+    total_rain = sum(rain, na.rm = TRUE),
+    total_sun = sum(sun, na.rm = TRUE)
+)
+coldest_month <- monthly_climate %>% filter(avg_tmin == min(avg_tmin))
+hottest_month <- monthly_climate %>% filter(avg_tmax == max(avg_tmax))
+rainiest_month <- monthly_climate %>% filter(total_rain == max(total_rain))
+sunniest_month <- monthly_climate %>% filter(total_sun == max(total_sun))
+frostiest_month <- monthly_climate %>% filter(total_af == max(total_af))
+
+weather_highest %>%
+  group_by(month) %>%
+  summarise(
+    avg_tmin = mean(tmin, na.rm = TRUE),
+    avg_tmax = mean(tmax, na.rm = TRUE),
+    avg_rain = mean(rain, na.rm = TRUE),
+    avg_sun = mean(sun, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = starts_with("avg"), names_to = "variable", values_to = "value") %>%
+  ggplot(aes(x = month, y = value, fill = variable)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~variable, scales = "free_y") +
+  labs(title = "Average Monthly Climate at Dunstaffnage",
+       x = "Month", y = "Value") +
+  theme_minimal()
+```
+
+
+# Question #5: Were there any historic years that were particularl rainy/cold/sunny/hot on the peak
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+weather_highest %>%
+  group_by(year) %>%
+  summarise(
+    avg_tmin = mean(tmin, na.rm = TRUE),
+    avg_tmax = mean(tmax, na.rm = TRUE)
+  ) %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = avg_tmin, color = "Min Temp")) +
+  geom_line(aes(y = avg_tmax, color = "Max Temp")) +
+  labs(title = "Yearly Temperature Trends at Dunstaffnage",
+       y = "Temperature (°C)", color = "Legend") +
+  theme_minimal()
+
+weather_highest %>%
+  group_by(year) %>%
+  summarise(
+    total_rain = sum(rain, na.rm = TRUE),
+    total_sun = sum(sun, na.rm = TRUE)
+  ) %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = total_rain, color = "Rainfall (mm)")) +
+  geom_line(aes(y = total_sun, color = "Sunshine Hours")) +
+  labs(title = "Annual Rainfall and Sunshine at Dunstaffnage",
+       y = "Total per Year", color = "Legend") +
+  theme_minimal()
+
+weather_highest %>%
+  group_by(year) %>%
+  summarise(total_af = sum(af, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = total_af)) +
+  geom_line(color = "steelblue") +
+  labs(title = "Total Air Frost Days per Year",
+       y = "Air Frost Days", x = "Year") +
+  theme_minimal()
 ```
