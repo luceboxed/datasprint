@@ -1,3 +1,5 @@
+# Scout
+
 ```{R setup, include=FALSE}
 munrodata <- tidytuesdayR::tt_load('2025-08-19')
 metdata <- tidytuesdayR::tt_load('2025-10-21')
@@ -9,7 +11,7 @@ library(tmap)
 library(knitr)
 ```
 
-# Question #1: How many peaks currently listed as Munros have always been included on the list?
+## Question #1: How many peaks currently listed as Munros have always been included on the list?
 
 ```{R munro-analysis, echo=TRUE, message=FALSE, warning=FALSE}
 scottish_munros <- munrodata$scottish_munros
@@ -32,7 +34,7 @@ tm_shape(scotland) +
     tm_layout(legend.outside = TRUE)
 ```
 
-# Question 2: Which year saw the largest number of changes to the classification?
+## Question #2: Which year saw the largest number of changes to the classification?
 
 ```{R reclassification-analysis, echo=TRUE, message=FALSE, warning=FALSE}
 # which years saw the most reclassifications from one type to another?
@@ -69,7 +71,7 @@ library(rnaturalearth)
 library(knitr)
 ```
 
-
+# Shelby
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 tuesdata <- tidytuesdayR::tt_load('2025-08-19')
@@ -90,7 +92,7 @@ munro_map_XY <- munro_map %>%
   cbind(projection)
 ```
 
-# Question #4: Which are the rainiest/coldest/sunniest/hottest months to visit the highest peak? Has that changed over time
+## Question #4: Which are the rainiest/coldest/sunniest/hottest months to visit the highest peak? Has that changed over time
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 highest_peak <- scottish_munros %>%
@@ -149,7 +151,7 @@ weather_highest %>%
 ```
 
 
-# Question #5: Were there any historic years that were particularl rainy/cold/sunny/hot on the peak
+## Question #5: Were there any historic years that were particularl rainy/cold/sunny/hot on the peak
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 weather_highest %>%
